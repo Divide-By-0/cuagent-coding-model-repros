@@ -1,29 +1,32 @@
-# Prompt sent to Codex (2 attempts, never found root cause)
+# Actual prompts sent to Codex (from session rollout-2026-03-18T20-31-21)
 
-> Our Windows desktop app stores data at `Path.home() / ".cuagent-win"`. When
-> launched from a `.bat` file or scheduled task, `Path.home()` sometimes resolves
-> to a system profile directory (e.g. `C:\Windows\system32\config\systemprofile`)
-> instead of the user's actual home. History and settings disappear. The app also
-> "disappears" when the launcher kills and restarts the process. Fix both issues.
+## The launch/disappear prompts (same session as repro 4)
 
-## Context given
+> now i get cuagent launch failed permission denied when i double click the desktop icon?
 
-- `broken_app.py` in this directory
-- Windows-only issue; macOS works fine with `Path.home()`
-- The `.bat` launcher runs `pythonw broken_app.py` which may inherit a different env
-- Users deploy via `redeploy.ps1` which kills the old process and starts a new one
+> i still get it, did you overwrite the old icon? what can i do to test or debug to help here
+
+> i double clicked cuagent and it didnt seem to launch, what happened
+
+> why is there two cuagent icons, neither seem to launch anything, just make one and have it work
+
+> look at the logs of the most recent windows run. one, so first, the cuagent started then disappeared, whyd that happen. also, why did it keep clicking the wrong search bar in the amazon task?
+
+> whys the app not responding rn? can you check the logs
 
 ## What Codex tried (2 commits, Mar 20)
 
 1. **ae49aa8**: Added `_SHOW_SIGNAL` file + `_is_already_running()` single-instance
    mechanism via psutil. This prevents kill+restart from losing window state, but
-   doesn't fix the path resolution issue at all.
+   doesn't fix the path resolution issue at all. The user kept saying "the cuagent
+   started then disappeared" and Codex assumed it was a duplicate-process problem.
 
 2. **502e87d**: Added `_get_version_str()` to show code version in UI. Added deploy
    workflow to AGENTS.md. Still using `Path.home()` for data dir.
 
-Codex treated the symptom ("app disappears on relaunch") instead of diagnosing WHY
-the data was missing.
+Codex never identified that `Path.home()` was resolving to the wrong directory.
+The user's reports of "disappeared" and "not responding" were symptoms of the app
+writing/reading data from a different location than expected.
 
 ## What Cursor did (1 commit, Mar 23)
 
